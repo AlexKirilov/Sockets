@@ -3,29 +3,62 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const cors = require('cors');
 
-const stellarAge = require('./stellarAge/stellarAge');
-// const app = express();
-// const http = require('https');
-// const server = http.createServer(app);
-// const io = require('socket.io').listen(server);
+// const stellarAge = require('./stellarAge/stellarAge');
+// // const app = express();
+// // const http = require('https');
+// // const server = http.createServer(app);
+// // const io = require('socket.io').listen(server);
 
-///////////////////////////////////////////////
-var WebSocketServer = require("ws").Server
-var http = require("http")
-var app = express()
-var port = process.env.PORT || 4567
-var allowedOrigins = "*:*";
+// ///////////////////////////////////////////////
+// var WebSocketServer = require("ws").Server
+// var http = require("http")
+// var app = express()
+// var port = process.env.PORT || 4567
+// var allowedOrigins = "*:*";
 
 
-//////////////////////////////////////////
-mongoose.Promise = Promise;
+// //////////////////////////////////////////
+// mongoose.Promise = Promise;
 
-app.set('port', port);
-app.use(cors());
-app.use(bodyParser.json());
-app.use('/stellar-age', stellarAge);
+// app.set('port', port);
+// app.use(cors());
+// app.use(bodyParser.json());
+// app.use('/stellar-age', stellarAge);
 
-mongoose.connect('mongodb://studentapitest:studentapitestadmin@ds119080.mlab.com:19080/studentapi', { useNewUrlParser: true, useUnifiedTopology: true }, (err, db) => {
+const PORT = process.env.PORT || 3000;
+const INDEX = '/index.html';
+
+const server = express()
+    .use((req, res) => res.sendFile(INDEX, {
+        root: __dirname
+    }))
+    .listen(PORT, () => console.log(`Listening on ${PORT}`));
+
+
+const {
+    Server
+} = require('ws');
+
+const wss = new Server({
+    server
+});
+
+
+wss.on('connection', (ws) => {
+    console.log('Client connected');
+    ws.on('close', () => console.log('Client disconnected'));
+
+    setInterval(() => {
+        wss.clients.forEach((client) => {
+            client.send(new Date().toTimeString());
+        });
+    }, 1000);
+});
+
+mongoose.connect('mongodb://studentapitest:studentapitestadmin@ds119080.mlab.com:19080/studentapi', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+}, (err, db) => {
     if (!err) console.log('connected to mongo');
     else console.log(' Mongo connection issue => ', err);
 
@@ -41,8 +74,12 @@ mongoose.connect('mongodb://studentapitest:studentapitestadmin@ds119080.mlab.com
             socket.emit('status', s);
         }
 
-        chat.find().limit(50).sort({ _id: 1 }).toArray((err, res) => {
-            if (err) { throw err; }
+        chat.find().limit(50).sort({
+            _id: 1
+        }).toArray((err, res) => {
+            if (err) {
+                throw err;
+            }
             socket.emit('output', res);
         });
 
@@ -70,12 +107,15 @@ mongoose.connect('mongodb://studentapitest:studentapitestadmin@ds119080.mlab.com
     });
 });
 
-// http.listen(4567);
+// // http.listen(4567);
 
-var server = http.createServer(app)
-server.listen(port)
+// var server = http.createServer(app)
+// server.listen(port)
 
-console.log("http server listening on %d", port)
+// console.log("http server listening on %d", port)
 
-var wss = new WebSocketServer({ server: server, origins: allowedOrigins })
-console.log("websocket server created")
+// var wss = new WebSocketServer({
+//     server: server,
+//     origins: allowedOrigins
+// })
+// console.log("websocket server created")
