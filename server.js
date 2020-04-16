@@ -43,18 +43,6 @@ const wss = new Server({
     server
 });
 
-
-wss.on('connection', (ws) => {
-    console.log('Client connected');
-    ws.on('close', () => console.log('Client disconnected'));
-
-    setInterval(() => {
-        wss.clients.forEach((client) => {
-            client.send(new Date().toTimeString());
-        });
-    }, 1000);
-});
-
 mongoose.connect('mongodb://studentapitest:studentapitestadmin@ds119080.mlab.com:19080/studentapi', {
     useNewUrlParser: true,
     useUnifiedTopology: true
@@ -67,12 +55,12 @@ mongoose.connect('mongodb://studentapitest:studentapitestadmin@ds119080.mlab.com
 
         var id = setInterval(function() {
             socket.send(JSON.stringify(new Date()), function() {})
-        }, 1000)
+        }, 1000);
 
         // create func to send status
         sendStatus = (s) => {
             socket.emit('status', s);
-        }
+        };
 
         chat.find().limit(50).sort({
             _id: 1
@@ -90,20 +78,26 @@ mongoose.connect('mongodb://studentapitest:studentapitestadmin@ds119080.mlab.com
                 sendStatus({
                     message: 'Message send',
                     clear: true
-                })
+                });
             });
         });
 
         socket.on('clear', (data) => {
             chat.deleteMany({}, () => {
                 socket.emit('cleared');
-            })
-        })
+            });
+        });
 
         socket.on("close", function() {
             console.log("websocket connection close")
             clearInterval(id)
-        })
+        });
+
+        // setInterval(() => {
+        //     wss.clients.forEach((client) => {
+        //         client.send(new Date().toTimeString());
+        //     });
+        // }, 1000);
     });
 });
 
