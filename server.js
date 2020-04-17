@@ -1,11 +1,11 @@
 const express = require('express');
-const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
-const cors = require('cors');
+// const bodyParser = require('body-parser');
+// const cors = require('cors');
 
-const stellarAge = require('./stellarAge/stellarAge');
+// const stellarAge = require('./stellarAge/stellarAge');
 
-const app = express();
+// const app = express();
 const PORT = 7878;
 const server = express().listen(PORT, () => console.log(`Listening on ${PORT}`));
 const {
@@ -15,11 +15,11 @@ const wss = new Server({
     server
 });
 
-app.use(cors());
-app.use(bodyParser.json());
-app.use('/stellar-age', stellarAge);
+// app.use(cors());
+// app.use(bodyParser.json());
+// app.use('/stellar-age', stellarAge);
 
-app.listen(process.env.PORT || 3000, (d) => console.log('app => ', d));
+// app.listen(process.env.PORT || 3000, (d) => console.log('app => ', d));
 
 function getChatData(chat, socket) {
     chat.find().limit(50).sort({
