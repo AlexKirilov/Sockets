@@ -6,7 +6,7 @@ const cors = require('cors');
 const stellarAge = require('./stellarAge/stellarAge');
 
 const app = express();
-const PORT = process.env.PORT || 7898;
+const PORT = 7878;
 const server = express().listen(PORT, () => console.log(`Listening on ${PORT}`));
 const {
     Server
