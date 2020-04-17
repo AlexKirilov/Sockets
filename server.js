@@ -3,45 +3,37 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const cors = require('cors');
 
-// const stellarAge = require('./stellarAge/stellarAge');
-// // const app = express();
-// // const http = require('https');
-// // const server = http.createServer(app);
-// // const io = require('socket.io').listen(server);
+const stellarAge = require('./stellarAge/stellarAge');
 
-// ///////////////////////////////////////////////
-// var WebSocketServer = require("ws").Server
-// var http = require("http")
-// var app = express()
-// var port = process.env.PORT || 4567
-// var allowedOrigins = "*:*";
-
-
-// //////////////////////////////////////////
-// mongoose.Promise = Promise;
-
-// app.set('port', port);
-// app.use(cors());
-// app.use(bodyParser.json());
-// app.use('/stellar-age', stellarAge);
-
-const PORT = process.env.PORT || 3000;
-const INDEX = '/index.html';
-
-const server = express()
-    .use((req, res) => res.sendFile(INDEX, {
-        root: __dirname
-    }))
-    .listen(PORT, () => console.log(`Listening on ${PORT}`));
-
-
+const app = express();
+const PORT = process.env.PORT || 7898;
+const server = express().listen(PORT, () => console.log(`Listening on ${PORT}`));
 const {
     Server
 } = require('ws');
-
 const wss = new Server({
     server
 });
+
+app.use(cors());
+app.use(bodyParser.json());
+app.use('/stellar-age', stellarAge);
+
+app.listen(process.env.PORT || 3000, (d) => console.log('app => ', d));
+
+function getChatData(chat, socket) {
+    chat.find().limit(50).sort({
+        _id: 1
+    }).toArray((err, res) => {
+        if (err) {
+            throw err;
+        }
+        socket.send(JSON.stringify({
+            type: 'getAllMessages',
+            messages: res
+        }));
+    });
+}
 
 mongoose.connect('mongodb://studentapitest:studentapitestadmin@ds119080.mlab.com:19080/studentapi', {
     useNewUrlParser: true,
@@ -51,51 +43,34 @@ mongoose.connect('mongodb://studentapitest:studentapitestadmin@ds119080.mlab.com
     else console.log(' Mongo connection issue => ', err);
 
     wss.on('connection', (socket) => {
-        let chat = db.collection('chat');
+        const chat = db.collection('chat');
 
-        var id = setInterval(function() {
-            socket.send(JSON.stringify(new Date()), function() {})
-        }, 1000);
+        getChatData(chat, socket);
 
-        // create func to send status
-        sendStatus = (s) => {
-            socket.emit('status', s);
-        };
+        socket.on('message', function incoming(response) {
+            const data = JSON.parse(response);
 
-        chat.find().limit(50).sort({
-            _id: 1
-        }).toArray((err, res) => {
-            if (err) {
-                throw err;
-            }
-            socket.emit('output', res);
-        });
-
-        socket.on('input', (data) => {
-            chat.insertOne(data, () => {
-                wss.emit('output', data);
-
-                sendStatus({
-                    message: 'Message send',
-                    clear: true
+            if (data.type === 'input') {
+                chat.insertOne(data.message, () => {
+                    getChatData(chat, socket);
                 });
-            });
-        });
-
-        socket.on('clear', (data) => {
-            chat.deleteMany({}, () => {
-                socket.emit('cleared');
-            });
+            } else if (data.type === 'getAllMessages') {
+                getChatData(chat, socket);
+            } else if (data.type === 'updateFleets') {
+                socket.send(JSON.stringify({ type: 'updateFleets' }));
+            } else if (data.type === 'startRally') {
+                socket.send(JSON.stringify({ type: 'startRally' }));
+            }
         });
 
         socket.on("close", function() {
             console.log("websocket connection close")
-            clearInterval(id)
+                // clearInterval(id)
         });
 
         // setInterval(() => {
         //     wss.clients.forEach((client) => {
-        //         client.send(new Date().toTimeString());
+        //         client.send();
         //     });
         // }, 1000);
     });
